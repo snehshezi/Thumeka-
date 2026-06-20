@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    name: Lint · Unit · Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: Build
+        # Build doesn't need real Supabase keys but Next will read process.env
+        # at build time for any code reading it at module scope. Use throwaway
+        # values to keep the build self-contained.
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: "https://ci.invalid.local"
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: "ci-anon"
+          SUPABASE_SERVICE_ROLE_KEY: "ci-service-role"
+          NEXT_PUBLIC_APP_URL: "https://ci.invalid.local"
